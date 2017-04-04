@@ -57,7 +57,7 @@ def get_user_tweets(user):
 		twitter_results = CACHE_DICTION[unique_identifier]
 	else:
 		print('getting data from internet for', user)
-		twitter_results = api.user_timeline(user, count = 200, include_rts = 1)
+		twitter_results = api.user_timeline(user, count = 100, include_rts = 1)
 		if len(twitter_results) >= 20:
 			CACHE_DICTION[unique_identifier] = twitter_results
 			f = open(CACHE_FNAME,'w')
@@ -168,18 +168,37 @@ conn.commit()
 
 # Make a query to select all of the records in the Users database. Save the list of tuples in a variable called users_info.
 
+statement = 'Select * from Users'
+cur.execute(statement)
+users_info = cur.fetchall()
+
 # Make a query to select all of the user screen names from the database. Save a resulting list of strings (NOT tuples, the strings inside them!) in the variable screen_names. HINT: a list comprehension will make this easier to complete!
 
+statement = 'Select screen_name from Users'
+cur.execute(statement)
+screen_names = cur.fetchall()
+screen_names = [i[0] for i in screen_names]
 
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
 
+statement = 'Select * from Tweets where retweets > 25'
+cur.execute(statement)
+more_than_25_rts = cur.fetchall()
 
 
 # Make a query to select all the descriptions (descriptions only) of the users who have favorited more than 25 tweets. Access all those strings, and save them in a variable called descriptions_fav_users, which should ultimately be a list of strings.
 
+statement = 'Select description from Users where num_favs > 25'
+cur.execute(statement)
+descriptions_fav_users = cur.fetchall()
+descriptions_fav_users = [" ".join(x) for x in descriptions_fav_users]
 
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 elements in each tuple: the user screenname and the text of the tweet -- for each tweet that has been retweeted more than 50 times. Save the resulting list of tuples in a variable called joined_result.
+
+statement = 'Select Users.screen_name, Tweets.text from Users Inner Join Tweets on Users.user_id = Tweets.user_id where Tweets.retweets > 5'
+cur.execute(statement)
+joined_result = cur.fetchall()
 
 
 
@@ -188,17 +207,32 @@ conn.commit()
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
 
-
+description_words = []
+for item in descriptions_fav_users:
+	description_words += [word for word in item.split() if word.isalpha()]
+description_words = set(description_words)
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 
-
+from collections import	Counter	
+string_of_words = list(description_words)
+str1 = ''.join(string_of_words)
+c = Counter(str1)
+most_common_char = c.most_common(1)
+most_common_char = str([x[0] for x in most_common_char]).strip('[\'\']')
 
 ## Putting it all together...
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
 
-
+from collections import defaultdict
+twitter_info_diction = defaultdict(list)
+statement = 'Select Users.screen_name, Tweets.text from Users Inner Join Tweets on Users.user_id = Tweets.user_id'
+cur.execute(statement)
+tweets_users = cur.fetchall()
+for i in tweets_users:
+	twitter_info_diction[i[0]].append(i[1])
+twitter_info_diction = dict(twitter_info_diction)
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
 
