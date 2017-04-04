@@ -86,19 +86,67 @@ cur = conn.cursor()
 # - time_posted (the time at which the tweet was created)
 # - retweets (containing the integer representing the number of times the tweet has been retweeted)
 
+cur.execute('DROP TABLE IF EXISTS Tweets')
+table_spec = 'CREATE TABLE IF NOT EXISTS '
+table_spec += 'Tweets (tweet_id INTEGER PRIMARY KEY, '
+table_spec += 'text TEXT, user_id TEXT, time_posted TIMESTAMP, retweets INTEGER)'
+cur.execute(table_spec)
+
+
 # table Users, with columns:
 # - user_id (containing the string id belonging to the user, from twitter data -- note the id_str attribute) -- this column should be the PRIMARY KEY of this table
 # - screen_name (containing the screen name of the user on Twitter)
 # - num_favs (containing the number of tweets that user has favorited)
 # - description (text containing the description of that user on Twitter, e.g. "Lecturer IV at UMSI focusing on programming" or "I tweet about a lot of things" or "Software engineer, librarian, lover of dogs..." -- whatever it is. OK if an empty string)
 
+cur.execute('DROP TABLE IF EXISTS Users')
+table_spec = 'CREATE TABLE IF NOT EXISTS '
+table_spec += 'Users (user_id INTEGER PRIMARY KEY, '
+table_spec += 'screen_name TEXT, num_favs INTEGER, description TEXT)'
+cur.execute(table_spec)
+
+
 ## You should load into the Users table:
 # The umich user, and all of the data about users that are mentioned in the umich timeline. 
 # NOTE: For example, if the user with the "TedXUM" screen name is mentioned in the umich timeline, that Twitter user's info should be in the Users table, etc.
 
+statement = 'INSERT INTO Users VALUES (?, ?, ?, ?)'
+#umich_tweets[1]['user']['user_id']
+t = (umich_tweets[1]['user']['id'], umich_tweets[1]['user']['screen_name'], umich_tweets[1]['user']['favourites_count'], umich_tweets[1]['user']['description'])
+user_upload = []
+user_upload.append(t)
+user_ids = []
+user_ids.append(umich_tweets[1]['user']['id'])
+for i in range(len(umich_tweets)):
+	if len(umich_tweets[i]['entities']['user_mentions']) > 0:
+		for j in range(len(umich_tweets[i]['entities']['user_mentions'])):
+			#print(umich_tweets[i]['entities']['user_mentions'][j]['name'])
+			user = api.get_user(umich_tweets[i]['entities']['user_mentions'][j]['screen_name'])
+			t = (user['id'], user['screen_name'], user['favourites_count'], user['description'])
+			if user['id'] not in user_ids:
+				user_upload.append(t)
+				user_ids.append(user['id'])
+
+for u in user_upload:
+	cur.execute(statement, u)
+
+conn.commit()
+
+
 ## You should load into the Tweets table: 
 # Info about all the tweets (at least 20) that you gather from the umich timeline.
 # NOTE: Be careful that you have the correct user ID reference in the user_id column! See below hints.
+
+tweet_upload = []
+for i in range(len(umich_tweets)):
+	tweet_upload.append((umich_tweets[i]['id'], umich_tweets[i]['text'], umich_tweets[i]['user']['id'], umich_tweets[i]['created_at'], umich_tweets[i]['retweet_count']))
+statement = 'INSERT INTO Tweets VALUES (?, ?, ?, ?, ?)'
+
+for t in tweet_upload:
+	cur.execute(statement, t)
+
+conn.commit()
+
 
 ## HINT: There's a Tweepy method to get user info that we've looked at before, so when you have a user id or screenname you can find alllll the info you want about the user.
 ## HINT #2: You may want to go back to a structure we used in class this week to ensure that you reference the user correctly in each Tweet record.
