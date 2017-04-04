@@ -49,12 +49,24 @@ except:
 
 
 # Define your function get_user_tweets here:
+def get_user_tweets(user):
+	unique_identifier = "twitter_{}".format(user)
 
-
-
+	if unique_identifier in CACHE_DICTION:
+		print('using cached data for', user)
+		twitter_results = CACHE_DICTION[unique_identifier]
+	else:
+		print('getting data from internet for', user)
+		twitter_results = api.user_timeline(user, count = 200, include_rts = 1)
+		if len(twitter_results) >= 20:
+			CACHE_DICTION[unique_identifier] = twitter_results
+			f = open(CACHE_FNAME,'w')
+			f.write(json.dumps(CACHE_DICTION))
+			f.close()
+	return twitter_results
 
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
-
+umich_tweets = get_user_tweets("umich")
 
 
 
