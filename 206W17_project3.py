@@ -66,7 +66,7 @@ def get_user_tweets(user):
 	return twitter_results
 
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
-umich_tweets = get_user_tweets("umich")
+umich_tweets = get_user_tweets('umich')
 
 
 
@@ -75,6 +75,9 @@ umich_tweets = get_user_tweets("umich")
 # You will be creating a database file: project3_tweets.db
 # Note that running the tests will actually create this file for you, but will not do anything else to it like create any tables; you should still start it in exactly the same way as if the tests did not do that! 
 # The database file should have 2 tables, and each should have the following columns... 
+
+conn = sqlite3.connect('project3_tweets.db')
+cur = conn.cursor()
 
 # table Tweets, with columns:
 # - tweet_id (containing the string id belonging to the Tweet itself, from the data you got from Twitter -- note the id_str attribute) -- this column should be the PRIMARY KEY of this table
